@@ -21,11 +21,10 @@ public class Developer {
     @Column(name = "developer_id")
     private Integer developerId;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Integer userId;
 
-    @Column(name="username", nullable = false, unique = true, length = 50)
+    @Column(name="username", nullable = true, unique = true, length = 50)
     private String username;
 
     @Column(name = "bio", columnDefinition = "TEXT")

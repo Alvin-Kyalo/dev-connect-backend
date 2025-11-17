@@ -34,7 +34,7 @@ public class MessageController {
     @GetMapping("/chats/{userId}")
     public ResponseEntity<List<ChatDTO>> getUserChats(@PathVariable Long userId) {
         try {
-            List<ChatDTO> chats = conversationService.getConversationsForUser(userId);
+            List<ChatDTO> chats = conversationService.getConversationsForUser(userId.intValue());
             return ResponseEntity.ok(chats);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -50,7 +50,8 @@ public class MessageController {
             @RequestParam Long userId1,
             @RequestParam Long userId2) {
         try {
-            List<MessageDTO> messages = messageService.getMessagesBetweenUsers(userId1, userId2);
+            List<MessageDTO> messages = messageService.getMessagesBetweenUsers(
+                    userId1.intValue(), userId2.intValue());
             return ResponseEntity.ok(messages);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -66,7 +67,8 @@ public class MessageController {
             @PathVariable Long conversationId,
             @RequestParam Long userId) {
         try {
-            List<MessageDTO> messages = messageService.getMessagesInConversation(conversationId, userId);
+            List<MessageDTO> messages = messageService.getMessagesInConversation(
+                    conversationId.intValue(), userId.intValue());
             return ResponseEntity.ok(messages);
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -81,8 +83,8 @@ public class MessageController {
     public ResponseEntity<MessageDTO> sendMessage(@RequestBody MessageDTO messageDTO) {
         try {
             MessageDTO sentMessage = messageService.sendMessage(
-                    messageDTO.getSenderId(),
-                    messageDTO.getReceiverId(),
+                    messageDTO.getSenderId().intValue(),
+                    messageDTO.getReceiverId().intValue(),
                     messageDTO.getText()
             );
             return ResponseEntity.ok(sentMessage);
@@ -93,15 +95,14 @@ public class MessageController {
 
     /**
      * Mark messages as read
-     * PUT /api/messages/read?conversationId={id}&senderId={senderId}&receiverId={receiverId}
+     * PUT /api/messages/read?conversationId={id}&readerId={readerId}
      */
     @PutMapping("/read")
     public ResponseEntity<Map<String, String>> markAsRead(
             @RequestParam Long conversationId,
-            @RequestParam Long senderId,
-            @RequestParam Long receiverId) {
+            @RequestParam Long readerId) {
         try {
-            messageService.markMessagesAsRead(conversationId, senderId, receiverId);
+            messageService.markMessagesAsRead(conversationId.intValue(), readerId.intValue());
             Map<String, String> response = new HashMap<>();
             response.put("message", "Messages marked as read");
             return ResponseEntity.ok(response);

@@ -3,7 +3,7 @@ package org.devconnect.devconnectbackend.dto;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.devconnect.devconnectbackend.model.ProjectStatus;
+import org.devconnect.devconnectbackend.model.Project;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -17,10 +17,9 @@ public class ProjectResponseDTO {
     private Long devId;
     private Long clientId;
     private String description;
-    private ProjectStatus status;
+    private Project.ProjectStatus status;
     private BigDecimal projectBudget;
     private LocalDateTime timeline;
-    private String imageUrls;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

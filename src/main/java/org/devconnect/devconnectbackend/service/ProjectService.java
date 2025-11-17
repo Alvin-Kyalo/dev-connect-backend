@@ -4,8 +4,8 @@ import lombok.RequiredArgsConstructor;
 import org.devconnect.devconnectbackend.dto.ProjectRequestDTO;
 import org.devconnect.devconnectbackend.dto.ProjectResponseDTO;
 import org.devconnect.devconnectbackend.model.Project;
-import org.devconnect.devconnectbackend.model.ProjectStatus;
 import org.devconnect.devconnectbackend.repository.ProjectRepository;
+import org.devconnect.devconnectbackend.utills.ProjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,57 +17,28 @@ import java.util.stream.Collectors;
 public class ProjectService {
 
     private final ProjectRepository projectRepository;
+    private final ProjectMapper projectMapper;
 
-    /**
-     * Add a new project
-     */
+    // Add a new project
     @Transactional
     public ProjectResponseDTO addProject(ProjectRequestDTO requestDTO) {
-        Project project = new Project();
-        project.setProjectName(requestDTO.getProjectName());
-        project.setDevId(requestDTO.getDevId());
-        project.setClientId(requestDTO.getClientId());
-        project.setDescription(requestDTO.getDescription());
-        project.setProjectBudget(requestDTO.getProjectBudget());
-        project.setTimeline(requestDTO.getTimeline());
-        project.setImageUrls(requestDTO.getImageUrls());
-        project.setStatus(ProjectStatus.PENDING);
-
+        Project project = projectMapper.toEntity(requestDTO);
         Project savedProject = projectRepository.save(project);
-        return mapToResponseDTO(savedProject);
+        return projectMapper.toResponseDTO(savedProject);
     }
 
-    /**
-     * Update an existing project
-     */
+    // Update an existing project
     @Transactional
     public ProjectResponseDTO updateProject(Long projectId, ProjectRequestDTO requestDTO) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
-        if (requestDTO.getProjectName() != null) {
-            project.setProjectName(requestDTO.getProjectName());
-        }
-        if (requestDTO.getDescription() != null) {
-            project.setDescription(requestDTO.getDescription());
-        }
-        if (requestDTO.getProjectBudget() != null) {
-            project.setProjectBudget(requestDTO.getProjectBudget());
-        }
-        if (requestDTO.getTimeline() != null) {
-            project.setTimeline(requestDTO.getTimeline());
-        }
-        if (requestDTO.getImageUrls() != null) {
-            project.setImageUrls(requestDTO.getImageUrls());
-        }
-
+        projectMapper.updateEntityFromDTO(requestDTO, project);
         Project updatedProject = projectRepository.save(project);
-        return mapToResponseDTO(updatedProject);
+        return projectMapper.toResponseDTO(updatedProject);
     }
 
-    /**
-     * Delete a project
-     */
+    // Delete a project
     @Transactional
     public void deleteProject(Long projectId) {
         if (!projectRepository.existsById(projectId)) {
@@ -76,93 +47,60 @@ public class ProjectService {
         projectRepository.deleteById(projectId);
     }
 
-    /**
-     * Mark a project as completed
-     */
+    // Mark project as completed
     @Transactional
     public ProjectResponseDTO markProjectAsCompleted(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
-        project.setStatus(ProjectStatus.COMPLETED);
+        project.setStatus(Project.ProjectStatus.COMPLETED);
         Project updatedProject = projectRepository.save(project);
-        return mapToResponseDTO(updatedProject);
+        return projectMapper.toResponseDTO(updatedProject);
     }
 
-    /**
-     * Update project status
-     */
+    // Update project status
     @Transactional
-    public ProjectResponseDTO updateProjectStatus(Long projectId, ProjectStatus status) {
+    public ProjectResponseDTO updateProjectStatus(Long projectId, Project.ProjectStatus status) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
 
         project.setStatus(status);
         Project updatedProject = projectRepository.save(project);
-        return mapToResponseDTO(updatedProject);
+        return projectMapper.toResponseDTO(updatedProject);
     }
 
-    /**
-     * Get project by ID
-     */
+    // Get project by ID
     public ProjectResponseDTO getProjectById(Long projectId) {
         Project project = projectRepository.findById(projectId)
                 .orElseThrow(() -> new RuntimeException("Project not found with id: " + projectId));
-        return mapToResponseDTO(project);
+        return projectMapper.toResponseDTO(project);
     }
 
-    /**
-     * Get all projects
-     */
+    // Get all projects
     public List<ProjectResponseDTO> getAllProjects() {
         return projectRepository.findAll().stream()
-                .map(this::mapToResponseDTO)
+                .map(projectMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get projects by developer ID
-     */
+    // Get projects by developer ID
     public List<ProjectResponseDTO> getProjectsByDevId(Long devId) {
         return projectRepository.findByDevId(devId).stream()
-                .map(this::mapToResponseDTO)
+                .map(projectMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get projects by client ID
-     */
+    // Get projects by developer ID
     public List<ProjectResponseDTO> getProjectsByClientId(Long clientId) {
         return projectRepository.findByClientId(clientId).stream()
-                .map(this::mapToResponseDTO)
+                .map(projectMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Get projects by status
-     */
-    public List<ProjectResponseDTO> getProjectsByStatus(ProjectStatus status) {
+    // Get projects by status
+    public List<ProjectResponseDTO> getProjectsByStatus(Project.ProjectStatus status) {
         return projectRepository.findByStatus(status).stream()
-                .map(this::mapToResponseDTO)
+                .map(projectMapper::toResponseDTO)
                 .collect(Collectors.toList());
-    }
-
-    /**
-     * Map Project entity to ProjectResponseDTO
-     */
-    private ProjectResponseDTO mapToResponseDTO(Project project) {
-        ProjectResponseDTO dto = new ProjectResponseDTO();
-        dto.setProjectId(project.getProjectId());
-        dto.setProjectName(project.getProjectName());
-        dto.setDevId(project.getDevId());
-        dto.setClientId(project.getClientId());
-        dto.setDescription(project.getDescription());
-        dto.setStatus(project.getStatus());
-        dto.setProjectBudget(project.getProjectBudget());
-        dto.setTimeline(project.getTimeline());
-        dto.setImageUrls(project.getImageUrls());
-        dto.setCreatedAt(project.getCreatedAt());
-        dto.setUpdatedAt(project.getUpdatedAt());
-        return dto;
     }
 }

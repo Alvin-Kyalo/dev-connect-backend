@@ -1,7 +1,11 @@
 package org.devconnect.devconnectbackend.service;
 
 import org.devconnect.devconnectbackend.dto.*;
+import org.devconnect.devconnectbackend.model.Client;
+import org.devconnect.devconnectbackend.model.Developer;
 import org.devconnect.devconnectbackend.model.User;
+import org.devconnect.devconnectbackend.repository.ClientRepository;
+import org.devconnect.devconnectbackend.repository.DeveloperRepository;
 import org.devconnect.devconnectbackend.repository.UserRepository;
 import org.devconnect.devconnectbackend.utills.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +24,12 @@ public class UserService {
     
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ClientRepository clientRepository;
+
+    @Autowired
+    private DeveloperRepository developerRepository;
 
     @Autowired
     private UserMapper userMapper;
@@ -50,6 +60,20 @@ public class UserService {
 
         // Save user to the database
         User savedUser = userRepository.save(user);
+
+        if (userRegistrationDTO.getUserRole() == User.UserRole.CLIENT) {
+            // Save Client to respective repository
+            Client client = new Client();
+            client.setUserId(savedUser.getUserId());
+
+            Client savedClient = clientRepository.save(client);
+        } else if (userRegistrationDTO.getUserRole() == User.UserRole.DEVELOPER) {
+            // Save Developer to respective repository
+            Developer developer = new Developer();
+            developer.setUserId(savedUser.getUserId());
+
+            Developer savedDeveloper = developerRepository.save(developer);
+        }
 
         // Convert saved Entity to responseDTO
         UserResponseDTO responseDTO = userMapper.toUserResponseDTO(savedUser);

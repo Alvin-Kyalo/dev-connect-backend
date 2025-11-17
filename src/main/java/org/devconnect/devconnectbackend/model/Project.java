@@ -16,7 +16,8 @@ import java.time.LocalDateTime;
 public class Project {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "project_seq_gen")
+    @SequenceGenerator(name = "project_seq_gen", sequenceName = "project_seq", allocationSize = 1)
     @Column(name = "project_id")
     private Long projectId;
 
@@ -42,9 +43,6 @@ public class Project {
     @Column(name = "timeline")
     private LocalDateTime timeline;
 
-    @Column(name = "image_urls", columnDefinition = "TEXT")
-    private String imageUrls; // Store comma-separated URLs or JSON array
-
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
@@ -60,5 +58,12 @@ public class Project {
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
+    }
+
+    public enum ProjectStatus {
+        PENDING,
+        IN_PROGRESS,
+        COMPLETED,
+        CANCELLED
     }
 }

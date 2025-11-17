@@ -4,7 +4,6 @@ import org.devconnect.devconnectbackend.dto.MessageDTO;
 import org.devconnect.devconnectbackend.model.Conversation;
 import org.devconnect.devconnectbackend.model.Message;
 import org.devconnect.devconnectbackend.model.User;
-import org.devconnect.devconnectbackend.repository.ConversationRepository;
 import org.devconnect.devconnectbackend.repository.MessageRepository;
 import org.devconnect.devconnectbackend.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,15 +23,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-@SuppressWarnings("null")
 @DisplayName("Message Service Tests")
 class MessageServiceTest {
 
     @Mock
     private MessageRepository messageRepository;
-
-    @Mock
-    private ConversationRepository conversationRepository;
 
     @Mock
     private ConversationService conversationService;
@@ -58,31 +53,35 @@ class MessageServiceTest {
         // Create test users
         sender = new User();
         sender.setUserId(1);
-        sender.setFirstName("Sender");
-        sender.setLastName("User");
-        sender.setEmail("sender@test.com");
+        sender.setFirstName("John");
+        sender.setLastName("Doe");
+        sender.setEmail("john@test.com");
         sender.setPasswordHash("password");
         sender.setUserRole(User.UserRole.CLIENT);
-        
+
         receiver = new User();
         receiver.setUserId(2);
-        receiver.setFirstName("Receiver");
-        receiver.setLastName("User");
-        receiver.setEmail("receiver@test.com");
+        receiver.setFirstName("Jane");
+        receiver.setLastName("Smith");
+        receiver.setEmail("jane@test.com");
         receiver.setPasswordHash("password");
         receiver.setUserRole(User.UserRole.DEVELOPER);
 
-        // Create test conversation (user 1 and user 2)
-        testConversation = new Conversation(1L, 2L);
-        testConversation.setConversation_id(1L);
-        testConversation.setUnreadCountA(0);
-        testConversation.setUnreadCountB(0);
+        // Create test conversation
+        testConversation = new Conversation();
+        testConversation.setConversationId(1);
+        testConversation.setUser1(sender);
+        testConversation.setUser2(receiver);
+        testConversation.setCreatedAt(LocalDateTime.now());
 
         // Create test message
-        testMessage = new Message(1L, 1L, "Hello Jane!");
-        testMessage.setId(1L);
+        testMessage = new Message();
+        testMessage.setMessageId(1);
+        testMessage.setConversation(testConversation);
+        testMessage.setSender(sender);
+        testMessage.setContent("Hello Jane!");
         testMessage.setStatus(Message.MessageStatus.SENT);
-        testMessage.setTimestamp(LocalDateTime.now());
+        testMessage.setCreatedAt(LocalDateTime.now());
     }
 
     @Test
@@ -91,12 +90,11 @@ class MessageServiceTest {
         // Arrange
         when(userRepository.findById(1)).thenReturn(Optional.of(sender));
         when(userRepository.findById(2)).thenReturn(Optional.of(receiver));
-        when(conversationService.getOrCreateConversation(1L, 2L)).thenReturn(testConversation);
-        when(messageRepository.save(any())).thenReturn(testMessage);
-        doNothing().when(conversationService).updateConversationAfterMessage(anyLong(), anyLong(), anyString());
+        when(conversationService.getOrCreateConversation(1, 2)).thenReturn(testConversation);
+        when(messageRepository.save(any(Message.class))).thenReturn(testMessage);
 
         // Act
-        MessageDTO result = messageService.sendMessage(1L, 2L, "Hello Jane!");
+        MessageDTO result = messageService.sendMessage(1, 2, "Hello Jane!");
 
         // Assert
         assertNotNull(result);
@@ -108,150 +106,172 @@ class MessageServiceTest {
 
         verify(userRepository, times(1)).findById(1);
         verify(userRepository, times(1)).findById(2);
-        verify(conversationService, times(1)).getOrCreateConversation(1L, 2L);
-        verify(messageRepository, times(1)).save(any());
-        verify(conversationService, times(1)).updateConversationAfterMessage(eq(1L), eq(1L), eq("Hello Jane!"));
+        verify(conversationService, times(1)).getOrCreateConversation(1, 2);
+        verify(messageRepository, times(1)).save(any(Message.class));
         verify(messagingTemplate, times(1))
-                .convertAndSendToUser(eq("2"), eq("/queue/messages"), any());
+                .convertAndSendToUser(eq("2"), eq("/queue/messages"), any(MessageDTO.class));
+    }
+
+    @Test
+    @DisplayName("Should throw exception when sender not found")
+    void testSendMessageSenderNotFound() {
+        // Arrange
+        when(userRepository.findById(1)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            messageService.sendMessage(1, 2, "Hello");
+        });
+
+        verify(userRepository, times(1)).findById(1);
+        verify(messageRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("Should throw exception when receiver not found")
+    void testSendMessageReceiverNotFound() {
+        // Arrange
+        when(userRepository.findById(1)).thenReturn(Optional.of(sender));
+        when(userRepository.findById(2)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        assertThrows(RuntimeException.class, () -> {
+            messageService.sendMessage(1, 2, "Hello");
+        });
+
+        verify(userRepository, times(1)).findById(1);
+        verify(userRepository, times(1)).findById(2);
+        verify(messageRepository, never()).save(any());
     }
 
     @Test
     @DisplayName("Should get messages in conversation")
     void testGetMessagesInConversation() {
         // Arrange
-        Message message2 = new Message(1L, 2L, "Hi John!");
-        message2.setId(2L);
+        Message message2 = new Message();
+        message2.setMessageId(2);
+        message2.setConversation(testConversation);
+        message2.setSender(receiver);
+        message2.setContent("Hi John!");
         message2.setStatus(Message.MessageStatus.SENT);
-        message2.setTimestamp(LocalDateTime.now().plusMinutes(1));
+        message2.setCreatedAt(LocalDateTime.now().plusMinutes(1));
 
         List<Message> messages = Arrays.asList(testMessage, message2);
-        
-        when(conversationService.getConversation(1L, 1L)).thenReturn(testConversation);
-        when(messageRepository.findByConversationIdOrderByTimestampAsc(1L)).thenReturn(messages);
+
+        when(conversationService.getConversation(1, 1)).thenReturn(testConversation);
+        when(messageRepository.findByConversationConversationIdOrderByCreatedAtAsc(1))
+                .thenReturn(messages);
 
         // Act
-        List<MessageDTO> result = messageService.getMessagesInConversation(1L, 1L);
+        List<MessageDTO> result = messageService.getMessagesInConversation(1, 1);
 
         // Assert
         assertNotNull(result);
         assertEquals(2, result.size());
         assertEquals(1L, result.get(0).getId());
+        assertEquals(1L, result.get(0).getSenderId());
+        assertEquals(2L, result.get(0).getReceiverId());
         assertEquals(2L, result.get(1).getId());
+        assertEquals(2L, result.get(1).getSenderId());
+        assertEquals(1L, result.get(1).getReceiverId());
 
-        verify(conversationService, times(1)).getConversation(1L, 1L);
-        verify(messageRepository, times(1)).findByConversationIdOrderByTimestampAsc(1L);
+        verify(conversationService, times(1)).getConversation(1, 1);
+        verify(messageRepository, times(1)).findByConversationConversationIdOrderByCreatedAtAsc(1);
     }
 
     @Test
     @DisplayName("Should get messages between users")
     void testGetMessagesBetweenUsers() {
         // Arrange
-        Message message2 = new Message(1L, 2L, "Hi John!");
-        message2.setId(2L);
-        message2.setStatus(Message.MessageStatus.SENT);
-        message2.setTimestamp(LocalDateTime.now().plusMinutes(1));
+        List<Message> messages = Arrays.asList(testMessage);
 
-        List<Message> messages = Arrays.asList(testMessage, message2);
-        
-        when(conversationService.getOrCreateConversation(1L, 2L)).thenReturn(testConversation);
-        when(conversationService.getConversation(1L, 1L)).thenReturn(testConversation);
-        when(messageRepository.findByConversationIdOrderByTimestampAsc(1L)).thenReturn(messages);
+        when(conversationService.getOrCreateConversation(1, 2)).thenReturn(testConversation);
+        when(conversationService.getConversation(1, 1)).thenReturn(testConversation);
+        when(messageRepository.findByConversationConversationIdOrderByCreatedAtAsc(1))
+                .thenReturn(messages);
 
         // Act
-        List<MessageDTO> result = messageService.getMessagesBetweenUsers(1L, 2L);
+        List<MessageDTO> result = messageService.getMessagesBetweenUsers(1, 2);
 
         // Assert
         assertNotNull(result);
-        assertEquals(2, result.size());
+        assertEquals(1, result.size());
         assertEquals(1L, result.get(0).getId());
-        assertEquals(2L, result.get(1).getId());
 
-        verify(conversationService, times(1)).getOrCreateConversation(1L, 2L);
-        verify(messageRepository, times(1)).findByConversationIdOrderByTimestampAsc(1L);
+        verify(conversationService, times(1)).getOrCreateConversation(1, 2);
+        verify(messageRepository, times(1)).findByConversationConversationIdOrderByCreatedAtAsc(1);
     }
 
     @Test
     @DisplayName("Should mark messages as read")
     void testMarkMessagesAsRead() {
         // Arrange
-        testMessage.setStatus(Message.MessageStatus.SENT);
-        List<Message> messages = Arrays.asList(testMessage);
-        
-        when(messageRepository.findUnreadMessagesBySender(1L, 1L)).thenReturn(messages);
-        when(messageRepository.save(any())).thenReturn(testMessage);
-        doNothing().when(conversationService).markConversationAsRead(anyLong(), anyLong());
+        List<Message> unreadMessages = Arrays.asList(testMessage);
+
+        when(messageRepository.findUnreadMessages(1, 2)).thenReturn(unreadMessages);
+        when(messageRepository.save(any(Message.class))).thenReturn(testMessage);
 
         // Act
-        messageService.markMessagesAsRead(1L, 1L, 2L);
+        messageService.markMessagesAsRead(1, 2);
 
         // Assert
-        verify(messageRepository, times(1)).save(any());
+        verify(messageRepository, times(1)).findUnreadMessages(1, 2);
+        verify(messageRepository, times(1)).save(any(Message.class));
         verify(messagingTemplate, times(1))
-                .convertAndSendToUser(eq("1"), eq("/queue/read-receipts"), any());
-        verify(conversationService, times(1)).markConversationAsRead(1L, 2L);
+                .convertAndSendToUser(eq("1"), eq("/queue/read-receipts"), any(MessageDTO.class));
+
+        assertEquals(Message.MessageStatus.READ, testMessage.getStatus());
+        assertNotNull(testMessage.getReadAt());
     }
 
     @Test
     @DisplayName("Should mark message as delivered")
     void testMarkMessageAsDelivered() {
         // Arrange
-        testMessage.setStatus(Message.MessageStatus.SENT);
-        when(messageRepository.findById(1L)).thenReturn(Optional.of(testMessage));
-        when(messageRepository.save(any())).thenReturn(testMessage);
-        when(conversationService.getConversation(1L, 1L)).thenReturn(testConversation);
+        when(messageRepository.findById(1)).thenReturn(Optional.of(testMessage));
+        when(messageRepository.save(any(Message.class))).thenReturn(testMessage);
 
         // Act
-        messageService.markMessageAsDelivered(1L);
+        messageService.markMessageAsDelivered(1);
 
         // Assert
-        verify(messageRepository, times(1)).save(any());
+        verify(messageRepository, times(1)).findById(1);
+        verify(messageRepository, times(1)).save(any(Message.class));
         verify(messagingTemplate, times(1))
-                .convertAndSendToUser(eq("1"), eq("/queue/delivery-receipts"), any());
+                .convertAndSendToUser(eq("1"), eq("/queue/delivery-receipts"), any(MessageDTO.class));
+
+        assertEquals(Message.MessageStatus.DELIVERED, testMessage.getStatus());
+        assertNotNull(testMessage.getDeliveredAt());
     }
 
     @Test
-    @DisplayName("Should not mark message as delivered if already delivered")
+    @DisplayName("Should not mark already delivered message")
     void testMarkMessageAsDeliveredAlreadyDelivered() {
         // Arrange
         testMessage.setStatus(Message.MessageStatus.DELIVERED);
-        when(messageRepository.findById(1L)).thenReturn(Optional.of(testMessage));
+        when(messageRepository.findById(1)).thenReturn(Optional.of(testMessage));
 
         // Act
-        messageService.markMessageAsDelivered(1L);
-
-        // Assert - should not save again or send notification
-        verify(messageRepository, never()).save(any());
-        verify(messagingTemplate, never())
-                .convertAndSendToUser(any(), any(), any());
-    }
-
-    @Test
-    @DisplayName("Should handle empty message list when marking as read")
-    void testMarkMessagesAsReadEmptyList() {
-        // Arrange
-        when(messageRepository.findUnreadMessagesBySender(1L, 1L)).thenReturn(Arrays.asList());
-        doNothing().when(conversationService).markConversationAsRead(anyLong(), anyLong());
-
-        // Act
-        messageService.markMessagesAsRead(1L, 1L, 2L);
+        messageService.markMessageAsDelivered(1);
 
         // Assert
+        verify(messageRepository, times(1)).findById(1);
         verify(messageRepository, never()).save(any());
-        verify(messagingTemplate, never()).convertAndSendToUser(any(), any(), any());
-        verify(conversationService, times(1)).markConversationAsRead(1L, 2L);
+        verify(messagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), any());
     }
 
     @Test
-    @DisplayName("Should throw exception when message not found for delivery")
+    @DisplayName("Should throw exception when marking non-existent message as delivered")
     void testMarkMessageAsDeliveredNotFound() {
         // Arrange
-        when(messageRepository.findById(999L)).thenReturn(Optional.empty());
+        when(messageRepository.findById(1)).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(RuntimeException.class, () -> {
-            messageService.markMessageAsDelivered(999L);
+            messageService.markMessageAsDelivered(1);
         });
 
+        verify(messageRepository, times(1)).findById(1);
         verify(messageRepository, never()).save(any());
     }
 }

@@ -17,5 +17,4 @@ public class ProjectRequestDTO {
     private String description;
     private BigDecimal projectBudget;
     private LocalDateTime timeline;
-    private String imageUrls;
 }

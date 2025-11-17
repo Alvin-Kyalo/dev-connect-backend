@@ -27,7 +27,7 @@ public class PasswordResetService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("User not found with this email"));
 
-        if (user.isActive() != true) {
+        if (!user.isActive()) {
             throw new RuntimeException("User account is not active");
         }
 

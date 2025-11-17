@@ -140,7 +140,156 @@ public class EmailService {
             """.replace("{{VERIFICATION_CODE}}", verificationCode);
 
     sendHtmlEmail(toEmail, subject, body);
-}
+    }
+
+    public void sendAccountVerificationSuccessEmail(String toEmail) {
+        String subject = "DevConnect Account Verified Successfully";
+
+        String body = """
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                    <meta charset="UTF-8">
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Account Verified Successfully</title>
+                </head>
+                <body style="margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); min-height: 100vh;">
+                    <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 40px 20px;">
+                                <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 16px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); overflow: hidden;">
+                
+                                    <!-- Header with gradient -->
+                                    <tr>
+                                        <td style="background: linear-gradient(135deg, #6B46C1 0%, #9333EA 50%, #7C3AED 100%); padding: 40px 30px; text-align: center;">
+                                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: -0.5px;">
+                                                DevConnect
+                                            </h1>
+                                        </td>
+                                    </tr>
+                
+                                    <!-- Content -->
+                                    <tr>
+                                        <td style="padding: 40px 30px;">
+                                            <!-- Success Icon -->
+                                            <div style="text-align: center; margin-bottom: 24px;">
+                                                <div style="display: inline-block; width: 80px; height: 80px; background: linear-gradient(135deg, #6B46C1 0%, #9333EA 50%, #7C3AED 100%); border-radius: 50%; position: relative;">
+                                                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);">
+                                                        <path d="M20 6L9 17L4 12" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                </div>
+                                            </div>
+                
+                                            <h2 style="margin: 0 0 16px 0; color: #1a1a2e; font-size: 24px; font-weight: 600; text-align: center;">
+                                                Your Account is Verified! 🎉
+                                            </h2>
+                
+                                            <p style="margin: 0 0 20px 0; color: #4a5568; font-size: 16px; line-height: 1.6; text-align: center;">
+                                                Congratulations! Your DevConnect account has been successfully verified and is now fully active.
+                                            </p>
+                
+                                            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+                                                <p style="margin: 0 0 16px 0; color: #1e40af; font-size: 18px; font-weight: 600;">
+                                                    🚀 You're All Set!
+                                                </p>
+                                                <p style="margin: 0; color: #1e40af; font-size: 14px; line-height: 1.6;">
+                                                    Start exploring DevConnect and connect with developers from around the world.
+                                                </p>
+                                            </div>
+                
+                                            <div style="background: #ffffff; border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; margin: 24px 0;">
+                                                <p style="margin: 0 0 16px 0; color: #1a1a2e; font-size: 16px; font-weight: 600;">
+                                                    What's Next?
+                                                </p>
+                                                <table role="presentation" cellpadding="0" cellspacing="0" style="width: 100%;">
+                                                    <tr>
+                                                        <td style="padding: 8px 0; vertical-align: top; width: 30px;">
+                                                            <span style="color: #7C3AED; font-size: 18px;">👤</span>
+                                                        </td>
+                                                        <td style="padding: 8px 0;">
+                                                            <p style="margin: 0; color: #4a5568; font-size: 14px; line-height: 1.6;">
+                                                                <strong style="color: #1a1a2e;">Complete your profile</strong><br>
+                                                                Add your skills, bio, and projects to stand out
+                                                            </p>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 8px 0; vertical-align: top;">
+                                                            <span style="color: #7C3AED; font-size: 18px;">🔍</span>
+                                                        </td>
+                                                        <td style="padding: 8px 0;">
+                                                            <p style="margin: 0; color: #4a5568; font-size: 14px; line-height: 1.6;">
+                                                                <strong style="color: #1a1a2e;">Explore projects</strong><br>
+                                                                Discover exciting projects and collaborations
+                                                            </p>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 8px 0; vertical-align: top;">
+                                                            <span style="color: #7C3AED; font-size: 18px;">💼</span>
+                                                        </td>
+                                                        <td style="padding: 8px 0;">
+                                                            <p style="margin: 0; color: #4a5568; font-size: 14px; line-height: 1.6;">
+                                                                <strong style="color: #1a1a2e;">Post a project</strong><br>
+                                                                Need developers? Post your project and find talented developers to bring your ideas to life
+                                                            </p>
+                                                        </td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td style="padding: 8px 0; vertical-align: top;">
+                                                            <span style="color: #7C3AED; font-size: 18px;">💬</span>
+                                                        </td>
+                                                        <td style="padding: 8px 0;">
+                                                            <p style="margin: 0; color: #4a5568; font-size: 14px; line-height: 1.6;">
+                                                                <strong style="color: #1a1a2e;">Connect with developers</strong><br>
+                                                                Build your network and start collaborating
+                                                            </p>
+                                                        </td>
+                                                    </tr>
+                                                </table>
+                                            </div>
+                
+                                            <p style="margin: 0; color: #4a5568; font-size: 14px; line-height: 1.6; text-align: center;">
+                                                Thank you for joining our community. We're excited to see what you'll build!
+                                            </p>
+                                        </td>
+                                    </tr>
+                
+                                    <!-- Footer -->
+                                    <tr>
+                                        <td style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                                            <p style="margin: 0 0 10px 0; color: #718096; font-size: 14px;">
+                                                Happy coding,<br>
+                                                <strong style="color: #6B46C1;">The DevConnect Team</strong>
+                                            </p>
+                
+                                            <p style="margin: 20px 0 0 0; color: #a0aec0; font-size: 12px; line-height: 1.5;">
+                                                Questions? We're here to help at <a href="mailto:support@devconnect.com" style="color: #7C3AED; text-decoration: none;">support@devconnect.com</a>
+                                            </p>
+                                        </td>
+                                    </tr>
+                
+                                </table>
+                
+                                <!-- Disclaimer -->
+                                <table role="presentation" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 20px auto 0;">
+                                    <tr>
+                                        <td style="text-align: center; padding: 0 20px;">
+                                            <p style="margin: 0; color: #a0aec0; font-size: 12px; line-height: 1.5;">
+                                                You're receiving this email because your DevConnect account was successfully verified.
+                                            </p>
+                                        </td>
+                                    </tr>
+                                </table>
+                
+                            </td>
+                        </tr>
+                    </table>
+                </body>
+                </html>
+                """;
+        sendHtmlEmail(toEmail, subject, body);
+    }
 
     public void sendPasswordRestEmail(String toEmail, String resetCode) {
         String subject = "DevConnect Password Reset Request";

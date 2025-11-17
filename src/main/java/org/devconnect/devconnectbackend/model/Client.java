@@ -20,11 +20,10 @@ public class Client {
     @Column(name = "client_id")
     private Integer clientId;
 
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false, unique = true)
-    private User user;
+    @Column(name = "user_id", nullable = false, unique = true)
+    private Integer userId;
 
-    @Column(name="username", nullable = false, unique = true, length = 50)
+    @Column(name="username", nullable = true, unique = true, length = 50)
     private String username;
 
     @Column(columnDefinition = "TEXT")
