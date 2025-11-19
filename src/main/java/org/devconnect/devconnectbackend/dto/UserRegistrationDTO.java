@@ -1,5 +1,7 @@
 package org.devconnect.devconnectbackend.dto;
 
+import org.devconnect.devconnectbackend.model.User;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -7,12 +9,14 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.devconnect.devconnectbackend.model.User;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class UserRegistrationDTO {
+
+    @Size(max = 50, message = "Username must not exceed 50 characters")
+    private String username;
 
     @NotBlank(message = "First name is required")
     @Size(max = 127, message = "First name must not exceed 127 characters")

@@ -23,6 +23,7 @@ public class ProjectMapper {
         project.setDescription(dto.getDescription());
         project.setProjectBudget(dto.getProjectBudget());
         project.setTimeline(dto.getTimeline());
+        project.setImageUrl(dto.getImageUrl());
         project.setStatus(Project.ProjectStatus.PENDING);
 
         return project;
@@ -45,6 +46,7 @@ public class ProjectMapper {
         dto.setStatus(project.getStatus());
         dto.setProjectBudget(project.getProjectBudget());
         dto.setTimeline(project.getTimeline());
+        dto.setImageUrl(project.getImageUrl());
         dto.setCreatedAt(project.getCreatedAt());
         dto.setUpdatedAt(project.getUpdatedAt());
 
@@ -70,6 +72,9 @@ public class ProjectMapper {
         }
         if (dto.getTimeline() != null) {
             project.setTimeline(dto.getTimeline());
+        }
+        if (dto.getImageUrl() != null) {
+            project.setImageUrl(dto.getImageUrl());
         }
     }
 }

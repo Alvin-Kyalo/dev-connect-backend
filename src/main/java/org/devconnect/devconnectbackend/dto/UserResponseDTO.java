@@ -1,12 +1,13 @@
 package org.devconnect.devconnectbackend.dto;
 
+import java.time.LocalDateTime;
+
+import org.devconnect.devconnectbackend.model.User.UserRole;
+import org.devconnect.devconnectbackend.model.User.UserStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.devconnect.devconnectbackend.model.User.UserStatus;
-import org.devconnect.devconnectbackend.model.User.UserRole;
-
-import java.time.LocalDateTime;
 
 
 @Data
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 public class UserResponseDTO {
 
     private Integer userId;
+    private String username;
     private String firstName;
     private String lastName;
     private String email;

@@ -1,6 +1,15 @@
 package org.devconnect.devconnectbackend.service;
 
-import org.devconnect.devconnectbackend.dto.*;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.devconnect.devconnectbackend.dto.LoginDTO;
+import org.devconnect.devconnectbackend.dto.LoginResponseDTO;
+import org.devconnect.devconnectbackend.dto.PasswordChangeDTO;
+import org.devconnect.devconnectbackend.dto.UserRegistrationDTO;
+import org.devconnect.devconnectbackend.dto.UserResponseDTO;
+import org.devconnect.devconnectbackend.dto.UserUpdateDTO;
 import org.devconnect.devconnectbackend.model.Client;
 import org.devconnect.devconnectbackend.model.Developer;
 import org.devconnect.devconnectbackend.model.User;
@@ -12,12 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.Collectors;
 
 @Service
 public class UserService {
@@ -50,6 +53,11 @@ public class UserService {
         // Check if email already exists
         if (userRepository.existsByEmail(userRegistrationDTO.getEmail())) {
             throw new RuntimeException("Email already in use");
+        }
+
+        // Check if username already exists
+        if (userRepository.existsByUsername(userRegistrationDTO.getUsername())) {
+            throw new RuntimeException("Username already taken");
         }
 
         // Map DTO to User entity
@@ -105,6 +113,21 @@ public class UserService {
         userMapper.updateUserFromDTO(userUpdateDTO, user);
 
         User updatedUser = userRepository.save(user);
+
+        // Also update username in Client or Developer table if username was provided
+        if (userUpdateDTO.getUsername() != null && !userUpdateDTO.getUsername().isEmpty()) {
+            if (user.getUserRole() == User.UserRole.CLIENT) {
+                clientRepository.findByUserId(userId).ifPresent(client -> {
+                    client.setUsername(userUpdateDTO.getUsername());
+                    clientRepository.save(client);
+                });
+            } else if (user.getUserRole() == User.UserRole.DEVELOPER) {
+                developerRepository.findByUserId(userId).ifPresent(developer -> {
+                    developer.setUsername(userUpdateDTO.getUsername());
+                    developerRepository.save(developer);
+                });
+            }
+        }
 
         return userMapper.toUserResponseDTO(updatedUser);
     }

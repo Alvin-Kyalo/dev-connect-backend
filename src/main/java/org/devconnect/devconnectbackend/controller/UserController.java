@@ -1,16 +1,39 @@
 package org.devconnect.devconnectbackend.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.validation.Valid;
-import org.devconnect.devconnectbackend.dto.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.devconnect.devconnectbackend.dto.LoginDTO;
+import org.devconnect.devconnectbackend.dto.LoginResponseDTO;
+import org.devconnect.devconnectbackend.dto.PasswordChangeDTO;
+import org.devconnect.devconnectbackend.dto.RefreshTokenDTO;
+import org.devconnect.devconnectbackend.dto.UserRegistrationDTO;
+import org.devconnect.devconnectbackend.dto.UserResponseDTO;
+import org.devconnect.devconnectbackend.dto.UserUpdateDTO;
+import org.devconnect.devconnectbackend.model.Developer;
 import org.devconnect.devconnectbackend.model.User;
+import org.devconnect.devconnectbackend.repository.DeveloperRepository;
+import org.devconnect.devconnectbackend.repository.UserRepository;
+import org.devconnect.devconnectbackend.service.JWTService;
 import org.devconnect.devconnectbackend.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
@@ -18,6 +41,16 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private JWTService jwtService;
+    
+    @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
+    private DeveloperRepository developerRepository;
+    
     private static final org.slf4j.Logger logger = org.slf4j.LoggerFactory.getLogger(UserController.class);
 
     // User Registration
@@ -44,11 +77,18 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(response);
     }
 
+    // Get All Users - must come before /{id} to avoid conflicts
+    @GetMapping
+    public ResponseEntity<List<UserResponseDTO>> getUsers() {
+        List<UserResponseDTO> users = userService.getAllUsers();
+        return ResponseEntity.status(HttpStatus.OK).body(users);
+    }
+
     // Get User by Email
     @GetMapping("/email/{email}")
     public ResponseEntity<UserResponseDTO> getUserByEmail(@PathVariable String email) {
         UserResponseDTO userResponseDTO = userService.getUserByEmail(email);
-        return  ResponseEntity.status(HttpStatus.OK).body(userResponseDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(userResponseDTO);
     }
 
     // Get users by role
@@ -63,18 +103,11 @@ public class UserController {
         return ResponseEntity.ok(userService.isEmailExists(email));
     }
 
-    // Get All Users
-    @GetMapping
-    public ResponseEntity<List<UserResponseDTO>> getUsers() {
-        List<UserResponseDTO> users = userService.getAllUsers();
-        return ResponseEntity.status(HttpStatus.OK).body(users);
-    }
-
-    // Get User by ID
+    // Get User by ID - must come after specific routes
     @GetMapping("/{id}")
     public ResponseEntity<UserResponseDTO> getUserById(@PathVariable Integer id) {
         UserResponseDTO userResponseDTO = userService.getUserById(id);
-        return  ResponseEntity.status(HttpStatus.OK).body(userResponseDTO);
+        return ResponseEntity.status(HttpStatus.OK).body(userResponseDTO);
     }
 
     // Update User
@@ -124,5 +157,40 @@ public class UserController {
     public ResponseEntity<Void> deactivateUser(@PathVariable Integer id) {
         userService.deactivateUserAccount(id);
         return ResponseEntity.ok().build();
+    }
+    
+    // Get current user's developer profile
+    @GetMapping("/me/developer")
+    public ResponseEntity<?> getCurrentDeveloperProfile(@RequestHeader("Authorization") String token) {
+        try {
+            String jwt = token.substring(7); // Remove "Bearer " prefix
+            String email = jwtService.extractEmail(jwt);
+            
+            User user = userRepository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("User not found"));
+            
+            Developer developer = developerRepository.findByUserId(user.getUserId())
+                    .orElseThrow(() -> new RuntimeException("Developer profile not found"));
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("developerId", developer.getDeveloperId());
+            response.put("userId", user.getUserId());
+            response.put("email", user.getEmail());
+            response.put("username", developer.getUsername());
+            response.put("bio", developer.getBio());
+            response.put("skills", developer.getSkills());
+            response.put("githubUrl", developer.getGithubUrl());
+            response.put("linkedinUrl", developer.getLinkedinUrl());
+            response.put("portfolioUrl", developer.getPortfolioUrl());
+            response.put("hourlyRate", developer.getHourlyRate());
+            response.put("averageRating", developer.getAverageRating());
+            response.put("totalProjectsCompleted", developer.getTotalProjectsCompleted());
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+            Map<String, String> error = new HashMap<>();
+            error.put("error", e.getMessage());
+            return ResponseEntity.badRequest().body(error);
+        }
     }
 }

@@ -32,24 +32,26 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-    return http
-        // Enable CORS support so browser preflight (OPTIONS) requests are
-        // handled before Spring Security enforces authorization rules.
-        .cors().and()
-        .csrf(csrf -> csrf.disable())
+        return http
+                // Enable CORS support so browser preflight (OPTIONS) requests are
+                // handled before Spring Security enforces authorization rules.
+                .cors().and()
+                .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints (no authentication required)
-                        .requestMatchers(
-                                "/api/users/register",
-                                "/api/users/login",
-                                "/api/users/refresh",
-                                "/api/password-reset/"
-                        ).permitAll()
-                        .requestMatchers("/api/users/exists/**").permitAll()
-
-                        // All other endpoints require authentication
-                        .anyRequest().authenticated()
+                // Public endpoints (no authentication required)
+                .requestMatchers(
+                        "/api/users/register",
+                        "/api/users/login",
+                        "/api/users/refresh",
+                        "/api/password-reset/**"
+                ).permitAll()
+                .requestMatchers("/api/users/exists/**").permitAll()
+                .requestMatchers("/api/projects/pending", "/api/projects/all", "/api/projects/{id}").permitAll()
+                .requestMatchers("/api/developers/**").permitAll()
+                .requestMatchers("/ws/**").permitAll()
+                // All other endpoints require authentication
+                .anyRequest().authenticated()
                 )
                 // Add JWT filter before Spring Security's authentication filter
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)

@@ -16,6 +16,7 @@ public class UserMapper {
             UserResponseDTO userResponseDTO = new UserResponseDTO();
 
             userResponseDTO.setUserId(user.getUserId());
+            userResponseDTO.setUsername(user.getUsername());
             userResponseDTO.setFirstName(user.getFirstName());
             userResponseDTO.setLastName(user.getLastName());
             userResponseDTO.setEmail(user.getEmail());
@@ -36,6 +37,7 @@ public class UserMapper {
         } else {
             User userModel = new User();
 
+            userModel.setUsername(userRegistrationDTO.getUsername());
             userModel.setFirstName(userRegistrationDTO.getFirstName());
             userModel.setLastName(userRegistrationDTO.getLastName());
             userModel.setEmail(userRegistrationDTO.getEmail());
@@ -48,6 +50,9 @@ public class UserMapper {
 
     public void updateUserFromDTO(UserUpdateDTO userUpdateDTO, User userModel) {
         if (userUpdateDTO != null && userModel != null) {
+            if (userUpdateDTO.getUsername() != null) {
+                userModel.setUsername(userUpdateDTO.getUsername());
+            }
             if (userUpdateDTO.getFirstName() != null) {
                 userModel.setFirstName(userUpdateDTO.getFirstName());
             }

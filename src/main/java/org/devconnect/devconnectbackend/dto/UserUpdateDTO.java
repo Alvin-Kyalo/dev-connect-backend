@@ -8,6 +8,9 @@ import lombok.Data;
 @Data
 public class UserUpdateDTO {
 
+    @Size(max = 50, message = "Username must not exceed 50 characters")
+    private String username;
+
     @NotBlank(message = "First name is required")
     @Size(max = 127, message = "First name must not exceed 127 characters")
     private String firstName;

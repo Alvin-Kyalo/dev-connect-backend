@@ -1,25 +1,32 @@
 package org.devconnect.devconnectbackend.controller;
 
-import org.devconnect.devconnectbackend.dto.*;
+import java.util.Arrays;
+import java.util.List;
+
+import org.devconnect.devconnectbackend.dto.LoginDTO;
+import org.devconnect.devconnectbackend.dto.LoginResponseDTO;
+import org.devconnect.devconnectbackend.dto.UserRegistrationDTO;
+import org.devconnect.devconnectbackend.dto.UserResponseDTO;
 import org.devconnect.devconnectbackend.model.User;
 import org.devconnect.devconnectbackend.service.UserService;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("User Controller Unit Tests")
@@ -43,7 +50,7 @@ public class UserControllerTest {
         testUserResponse.setEmail("test@example.com");
         testUserResponse.setUserRole(User.UserRole.DEVELOPER);
         testUserResponse.setUserStatus(User.UserStatus.OFFLINE);
-        
+
         testLoginResponse = new LoginResponseDTO();
         testLoginResponse.setAccessToken("test-access-token");
         testLoginResponse.setRefreshToken("test-refresh-token");
@@ -73,7 +80,7 @@ public class UserControllerTest {
         assertNotNull(response.getBody());
         assertEquals("new@example.com", response.getBody().getEmail());
         assertEquals(User.UserRole.DEVELOPER, response.getBody().getUserRole());
-        
+
         verify(userService).registerUser(any(UserRegistrationDTO.class));
     }
 
@@ -84,16 +91,18 @@ public class UserControllerTest {
         loginDTO.setEmail("test@example.com");
         loginDTO.setPassword("password123");
 
+        HttpServletRequest request = mock(HttpServletRequest.class);
+
         when(userService.login(any(LoginDTO.class))).thenReturn(testLoginResponse);
 
-        ResponseEntity<LoginResponseDTO> response = userController.login(loginDTO);
+        ResponseEntity<LoginResponseDTO> response = userController.login(request, loginDTO);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("test-access-token", response.getBody().getAccessToken());
         assertNotNull(response.getBody().getUser());
         assertEquals("test@example.com", response.getBody().getUser().getEmail());
-        
+
         verify(userService).login(any(LoginDTO.class));
     }
 
@@ -108,7 +117,7 @@ public class UserControllerTest {
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().getUserId());
         assertEquals("test@example.com", response.getBody().getEmail());
-        
+
         verify(userService).getUserById(1);
     }
 
@@ -130,7 +139,7 @@ public class UserControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
-        
+
         verify(userService).getAllUsers();
     }
 
@@ -142,8 +151,47 @@ public class UserControllerTest {
         ResponseEntity<Void> response = userController.updateUserStatus(1, User.UserStatus.ONLINE);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        
+
         verify(userService).updateUserStatus(1, User.UserStatus.ONLINE);
+    }
+
+    @Test
+    @DisplayName("Should get user by email")
+    void testGetUserByEmail_Success() {
+        when(userService.getUserByEmail("test@example.com")).thenReturn(testUserResponse);
+
+        ResponseEntity<UserResponseDTO> response = userController.getUserByEmail("test@example.com");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("test@example.com", response.getBody().getEmail());
+
+        verify(userService).getUserByEmail("test@example.com");
+    }
+
+    @Test
+    @DisplayName("Should check if email exists")
+    void testEmailExists() {
+        when(userService.isEmailExists("test@example.com")).thenReturn(true);
+
+        ResponseEntity<Boolean> response = userController.emailExists("test@example.com");
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(true, response.getBody());
+
+        verify(userService).isEmailExists("test@example.com");
+    }
+
+    @Test
+    @DisplayName("Should update last seen")
+    void testUpdateLastSeen() {
+        doNothing().when(userService).updateLastSeen(1);
+
+        ResponseEntity<Void> response = userController.updateLastSeen(1);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+
+        verify(userService).updateLastSeen(1);
     }
 
     @Test
@@ -154,7 +202,7 @@ public class UserControllerTest {
         ResponseEntity<Void> response = userController.deleteUser(1);
 
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        
+
         verify(userService).deleteUser(1);
     }
 }

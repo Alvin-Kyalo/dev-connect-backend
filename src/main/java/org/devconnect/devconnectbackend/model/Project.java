@@ -1,12 +1,22 @@
 package org.devconnect.devconnectbackend.model;
 
-import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.SequenceGenerator;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "projects")
@@ -42,6 +52,9 @@ public class Project {
 
     @Column(name = "timeline")
     private LocalDateTime timeline;
+
+    @Column(name = "image_url")
+    private String imageUrl;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
